@@ -1,0 +1,16 @@
+{
+    "name": "SebastianLague",
+    "rootNamespace": "",
+    "references": [
+        "GUID:c5f7959eb71c1488fafa74610b11da8f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
