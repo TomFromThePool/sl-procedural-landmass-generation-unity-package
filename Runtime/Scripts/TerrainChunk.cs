@@ -18,23 +18,28 @@ public class TerrainChunk {
 	LODMesh[] lodMeshes;
 	int colliderLODIndex;
 
-	HeightMap heightMap;
+	public HeightMap heightMap;
 	bool heightMapReceived;
 	int previousLODIndex = -1;
 	bool hasSetCollider;
 	float maxViewDst;
 
+	private bool alwaysVisible = false;
+
 	HeightMapSettings heightMapSettings;
 	MeshSettings meshSettings;
 	Transform viewer;
 
-	public TerrainChunk(Vector2 coord, HeightMapSettings heightMapSettings, MeshSettings meshSettings, LODInfo[] detailLevels, int colliderLODIndex, Transform parent, Transform viewer, Material material) {
+	public bool Ready => heightMapReceived;
+
+	public TerrainChunk(Vector2 coord, HeightMapSettings heightMapSettings, MeshSettings meshSettings, LODInfo[] detailLevels, int colliderLODIndex, Transform parent, Transform viewer, Material material, bool alwaysVisible = false) {
 		this.coord = coord;
 		this.detailLevels = detailLevels;
 		this.colliderLODIndex = colliderLODIndex;
 		this.heightMapSettings = heightMapSettings;
 		this.meshSettings = meshSettings;
 		this.viewer = viewer;
+		this.alwaysVisible = alwaysVisible;
 
 		sampleCentre = coord * meshSettings.meshWorldSize / meshSettings.meshScale;
 		Vector2 position = coord * meshSettings.meshWorldSize ;
@@ -49,6 +54,7 @@ public class TerrainChunk {
 
 		meshObject.transform.position = new Vector3(position.x,0,position.y);
 		meshObject.transform.parent = parent;
+		
 		SetVisible(false);
 
 		lodMeshes = new LODMesh[detailLevels.Length];
@@ -94,11 +100,18 @@ public class TerrainChunk {
 			if (visible) {
 				int lodIndex = 0;
 
-				for (int i = 0; i < detailLevels.Length - 1; i++) {
-					if (viewerDstFromNearestEdge > detailLevels [i].visibleDstThreshold) {
-						lodIndex = i + 1;
-					} else {
-						break;
+				if (alwaysVisible)
+				{
+					for (int i = 0; i < detailLevels.Length - 1; i++)
+					{
+						if (viewerDstFromNearestEdge > detailLevels[i].visibleDstThreshold)
+						{
+							lodIndex = i + 1;
+						}
+						else
+						{
+							break;
+						}
 					}
 				}
 
@@ -106,7 +119,10 @@ public class TerrainChunk {
 					LODMesh lodMesh = lodMeshes [lodIndex];
 					if (lodMesh.hasMesh) {
 						previousLODIndex = lodIndex;
-						meshFilter.mesh = lodMesh.mesh;
+						if (meshFilter != null)
+						{
+							meshFilter.mesh = lodMesh.mesh;
+						}
 					} else if (!lodMesh.hasRequestedMesh) {
 						lodMesh.RequestMesh (heightMap, meshSettings);
 					}
@@ -137,19 +153,44 @@ public class TerrainChunk {
 
 			if (sqrDstFromViewerToEdge < colliderGenerationDistanceThreshold * colliderGenerationDistanceThreshold) {
 				if (lodMeshes [colliderLODIndex].hasMesh) {
-					meshCollider.sharedMesh = lodMeshes [colliderLODIndex].mesh;
-					hasSetCollider = true;
+					if (meshCollider != null)
+					{
+						meshCollider.sharedMesh = lodMeshes[colliderLODIndex].mesh;
+						hasSetCollider = true;
+					}
 				}
 			}
 		}
 	}
 
 	public void SetVisible(bool visible) {
-		meshObject.SetActive (visible);
+		if (!alwaysVisible)
+		{
+			meshObject.SetActive(visible);
+		}
 	}
 
 	public bool IsVisible() {
-		return meshObject.activeSelf;
+		if (meshObject != null)
+		{
+			return meshObject.activeSelf;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	public void Destroy()
+	{
+		if (!Application.isPlaying)
+		{
+			GameObject.DestroyImmediate(meshObject);
+		}
+		else
+		{
+			GameObject.Destroy(meshObject);
+		}
 	}
 
 }

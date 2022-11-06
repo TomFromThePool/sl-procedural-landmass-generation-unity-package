@@ -17,5 +17,12 @@ public class MapPreviewEditor : Editor {
 		if (GUILayout.Button ("Generate")) {
 			mapPreview.DrawMapInEditor ();
 		}
+
+		EditorGUI.BeginDisabledGroup(mapPreview.drawMode != MapPreview.DrawMode.Live);
+		if (GUILayout.Button("Clear"))
+		{
+			mapPreview.Generator.Clear();
+		}
+		EditorGUI.EndDisabledGroup();
 	}
 }

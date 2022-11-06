@@ -3,6 +3,12 @@ using System.Collections;
 
 public static class MeshGenerator {
 
+	public static Vector2 TransformHeightMapPosition(int x, int y, MeshSettings meshSettings)
+	{
+		Vector2 topLeft = new Vector2 (-1, 1) * meshSettings.meshWorldSize / 2f;
+		Vector2 percent = new Vector2 (x - 1, y - 1) / (meshSettings.numVertsPerLine - 3);
+		return topLeft + new Vector2(percent.x,-percent.y) * meshSettings.meshWorldSize;
+	}
 
 	public static MeshData GenerateTerrainMesh(float[,] heightMap, MeshSettings meshSettings, int levelOfDetail) {
 

@@ -4,18 +4,42 @@ using UnityEngine;
 using System;
 using System.Threading;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
+[ExecuteAlways]
 public class ThreadedDataRequester : MonoBehaviour {
 
-	static ThreadedDataRequester instance;
-	Queue<ThreadInfo> dataQueue = new Queue<ThreadInfo>();
-
-	void Awake() {
-		instance = FindObjectOfType<ThreadedDataRequester> ();
+	#if UNITY_EDITOR
+	static ThreadedDataRequester()
+	{
+		EditorApplication.update += ProcessQueueStatic;
 	}
+	#endif
+	
+	static ThreadedDataRequester _instance;
 
-	public static void RequestData(Func<object> generateData, Action<object> callback) {
+	static ThreadedDataRequester Instance
+	{
+		get
+		{
+			if (_instance == null)
+			{
+				_instance = FindObjectOfType<ThreadedDataRequester>();
+			}
+
+			return _instance;
+		}
+	}
+	
+	Queue<ThreadInfo> dataQueue = new Queue<ThreadInfo>();
+	
+	public static void RequestData(Func<object> generateData, Action<object> callback)
+	{
+		var i = Instance;
 		ThreadStart threadStart = delegate {
-			instance.DataThread (generateData, callback);
+			i.DataThread (generateData, callback);
 		};
 
 		new Thread (threadStart).Start ();
@@ -27,15 +51,29 @@ public class ThreadedDataRequester : MonoBehaviour {
 			dataQueue.Enqueue (new ThreadInfo (callback, data));
 		}
 	}
-		
-
+	
 	void Update() {
-		if (dataQueue.Count > 0) {
-			for (int i = 0; i < dataQueue.Count; i++) {
-				ThreadInfo threadInfo = dataQueue.Dequeue ();
-				threadInfo.callback (threadInfo.parameter);
+		if (Application.isPlaying)
+		{
+			ProcessQueue();
+		}
+	}
+
+	internal void ProcessQueue()
+	{
+		if (dataQueue.Count > 0)
+		{
+			for (int i = 0; i < dataQueue.Count; i++)
+			{
+				ThreadInfo threadInfo = dataQueue.Dequeue();
+				threadInfo.callback(threadInfo.parameter);
 			}
 		}
+	}
+
+	static void ProcessQueueStatic()
+	{
+		Instance.ProcessQueue();
 	}
 
 	struct ThreadInfo {
